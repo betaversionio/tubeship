@@ -1,0 +1,98 @@
+name: Release npm Package
+
+# Tag format: v1.2.3 (or v1.3.0-beta.0 for a prerelease) publishes tubeship to npm.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 1.2.3), without the "v" prefix'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # Needed to create the GitHub release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve version
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Sync package.json version
+        run: |
+          VERSION="${{ steps.resolve.outputs.VERSION }}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$PKG_VERSION" != "$VERSION" ]; then
+            echo "::warning::package.json was at $PKG_VERSION, not $VERSION — the version bump was forgotten before tagging. Updating it to match the tag before building/publishing."
+            npm pkg set version="$VERSION"
+          fi
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Determine npm dist-tag
+        id: npmtag
+        run: |
+          VERSION="${{ steps.resolve.outputs.VERSION }}"
+          if [[ "$VERSION" == *-* ]]; then
+            # Prerelease (e.g. 0.2.0-beta.0) — publish under its prerelease identifier's
+            # dist-tag instead of "latest", so `npm install`/`npx` keeps resolving to the
+            # last stable release for everyone not explicitly opting into the prerelease.
+            TAG="${VERSION#*-}"
+            TAG="${TAG%%.*}"
+          else
+            TAG="latest"
+          fi
+          echo "TAG=$TAG" >> "$GITHUB_OUTPUT"
+          echo "PRERELEASE=$([[ "$VERSION" == *-* ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to npm
+        # prepublishOnly already ran as separate steps above.
+        run: pnpm publish --no-git-checks --access public --tag ${{ steps.npmtag.outputs.TAG }} --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ steps.resolve.outputs.VERSION }}
+          name: tubeship@${{ steps.resolve.outputs.VERSION }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ steps.npmtag.outputs.PRERELEASE }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

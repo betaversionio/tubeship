@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+.DS_Store
+# Credentials live in ~/.config/tubeship/<profile>/, never here.
+client_secret*.json
+token.json

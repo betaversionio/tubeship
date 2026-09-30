@@ -1,0 +1,72 @@
+{
+  "name": "tubeship",
+  "version": "0.1.0",
+  "description": "A publishing CLI for YouTube: one JSON manifest per video (captions, thumbnail, playlists, schedule), batch uploads that resume, sync for videos already up, safe by default (plan + confirm, --dry-run). Uses the YouTube Data API v3.",
+  "author": {
+    "name": "Satyam Lohiya",
+    "url": "https://github.com/betaversionio"
+  },
+  "homepage": "https://github.com/betaversionio/tubeship#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/betaversionio/tubeship.git"
+  },
+  "bugs": {
+    "url": "https://github.com/betaversionio/tubeship/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "youtube",
+    "youtube-api",
+    "upload",
+    "cli",
+    "captions",
+    "subtitles",
+    "playlist",
+    "schedule",
+    "publish",
+    "creator"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "tubeship": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
+  },
+  "dependencies": {
+    "@googleapis/youtube": "^39.0.1",
+    "commander": "^15.0.0",
+    "google-auth-library": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsdown": "^0.23.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
+  },
+  "packageManager": "pnpm@12.6.0"
+}
