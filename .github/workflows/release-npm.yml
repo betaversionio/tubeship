@@ -18,6 +18,7 @@ jobs:
 
     permissions:
       contents: write # Needed to create the GitHub release
+      id-token: write # npm trusted publishing (OIDC) and provenance, once configured on npmjs.com
 
     steps:
       - name: Checkout
