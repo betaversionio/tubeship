@@ -31,7 +31,7 @@ Google. YouTube is a trademark of Google LLC.
 npm install -g tubeship     # or: npx tubeship ...
 ```
 
-Node.js 20 or newer.
+Node.js 22 or newer.
 
 ## Setup (once per channel)
 
